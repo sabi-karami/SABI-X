@@ -36,7 +36,6 @@ jobs:
         include:
           - { abi: arm64-v8a,   target: aarch64-linux-android,   goarch: arm64, goarm: "" }
           - { abi: armeabi-v7a, target: armv7-linux-androideabi, goarch: arm,   goarm: "7" }
-          - { abi: x86_64,      target: x86_64-linux-android,    goarch: amd64, goarm: "" }
     steps:
       - name: Checkout (this repo)
         uses: actions/checkout@v4
@@ -174,7 +173,7 @@ jobs:
             -libname=box \
             -trimpath -buildvcs=false \
             -ldflags "-X github.com/sagernet/sing-box/constant.Version=${version} -X internal/godebug.defaultGODEBUG=multipathtcp=0 -s -w -buildid= -checklinkname=0" \
-            -tags "with_gvisor,with_quic,with_wireguard,with_utls,with_clash_api,badlinkname,tfogo_checklinkname0" \
+            -tags "with_gvisor,with_clash_api,badlinkname,tfogo_checklinkname0" \
             ./experimental/libbox
           ls -l libbox.aar
 
