@@ -180,6 +180,7 @@ class TunnelService : VpnService() {
         Engine.resetLive()
         Engine.paused.value = false
         Engine.status.value = Status(Phase.IDLE, error = error)
+        Engine.connectedAt.value = 0L
         foreground = false
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
@@ -237,6 +238,7 @@ class TunnelService : VpnService() {
                 connectedAt = SystemClock.elapsedRealtime()
                 lastRxAt = connectedAt
                 Engine.status.value = Status(Phase.CONNECTED)
+                if (Engine.connectedAt.value == 0L) Engine.connectedAt.value = System.currentTimeMillis()
                 Engine.log("Connected via ${s.activeLabel()}")
                 scope.launch { fetchExit(port) }
                 val speedJob = scope.launch {

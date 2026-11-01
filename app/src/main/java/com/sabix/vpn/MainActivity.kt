@@ -16,6 +16,8 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -78,7 +80,10 @@ private fun Root(onLanguageChanged: () -> Unit) {
             Backdrop()
             AnimatedContent(
                 targetState = screen,
-                transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(140)) },
+                transitionSpec = {
+                    (fadeIn(tween(260)) + scaleIn(tween(260), initialScale = 0.96f)) togetherWith
+                        (fadeOut(tween(150)) + scaleOut(tween(150), targetScale = 1.02f))
+                },
                 label = "nav"
             ) { sc ->
                 when (sc) {

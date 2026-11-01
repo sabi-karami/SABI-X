@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.runtime.produceState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -91,7 +92,7 @@ fun LogsScreen(back: () -> Unit) {
                 }
             }
         } else {
-            Box(Modifier.fillMaxSize().clip(RoundedCornerShape(22.dp)).background(c.surfaceContainer)) {
+            Box(Modifier.fillMaxSize().clip(RoundedCornerShape(20.dp)).background(c.surfaceContainer.copy(alpha = 0.85f)).border(1.dp, c.outlineVariant, RoundedCornerShape(20.dp))) {
                 LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(14.dp)) {
                     items(logs.size) { i ->
                         LogLine(logs[logs.size - 1 - i])
@@ -224,8 +225,8 @@ private fun LinkRow(ico: Ico, title: String, sub: String, onClick: () -> Unit) {
     val c = MaterialTheme.colorScheme
     AppCard(Modifier.clip(RoundedCornerShape(22.dp)).clickable(onClick = onClick)) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(42.dp).clip(RoundedCornerShape(14.dp)).background(c.primary.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
-                Icon8(ico, c.primary, 22.dp)
+            Box(Modifier.size(42.dp).clip(RoundedCornerShape(14.dp)).background(androidx.compose.ui.graphics.Brush.linearGradient(listOf(LocalExtra.current.a.copy(alpha = 0.18f), LocalExtra.current.b.copy(alpha = 0.26f)))), contentAlignment = Alignment.Center) {
+                Icon8(ico, LocalExtra.current.a, 22.dp)
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {

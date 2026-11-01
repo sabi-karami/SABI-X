@@ -473,7 +473,11 @@ fun ActionRow(ico: Ico, text: String, enabled: Boolean = true, danger: Boolean =
             .background(c.surfaceContainerHigh).clickable(enabled = enabled, onClick = onClick).padding(horizontal = 14.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon8(ico, if (danger) c.error else c.primary, 20.dp)
+        val tint = if (danger) c.error else LocalExtra.current.a
+        Box(
+            Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(tint.copy(alpha = 0.14f)),
+            contentAlignment = Alignment.Center
+        ) { Icon8(ico, tint, 18.dp) }
         Spacer(Modifier.width(12.dp))
         Text(text, Modifier.weight(1f), color = tone, style = MaterialTheme.typography.bodyMedium)
     }
@@ -508,8 +512,10 @@ fun SwitchRow(title: String, checked: Boolean, onChange: (Boolean) -> Unit) {
         Switch(
             checked = checked, onCheckedChange = onChange,
             colors = SwitchDefaults.colors(
-                checkedTrackColor = MaterialTheme.colorScheme.primary,
-                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                checkedTrackColor = LocalExtra.current.b,
+                checkedThumbColor = Color.White,
+                checkedBorderColor = LocalExtra.current.a.copy(alpha = 0.6f),
+                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
             )
         )
     }

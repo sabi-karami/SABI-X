@@ -79,6 +79,7 @@ import java.util.Locale
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -200,6 +201,20 @@ fun HomeScreen(openSettings: () -> Unit, openLogs: () -> Unit) {
             }
         }
         Spacer(Modifier.height(8.dp))
+        val since by Engine.connectedAt.collectAsStateWithLifecycle()
+        if (live && since > 0L) {
+            var now by remember { mutableStateOf(System.currentTimeMillis()) }
+            LaunchedEffect(since) {
+                while (true) { now = System.currentTimeMillis(); delay(1000) }
+            }
+            val sec = ((now - since) / 1000).coerceAtLeast(0)
+            Text(
+                String.format(Locale.US, "%02d:%02d:%02d", sec / 3600, (sec / 60) % 60, sec % 60),
+                fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 28.sp,
+                letterSpacing = 3.sp, color = Color.White, modifier = Modifier.brushText(x.tri)
+            )
+            Spacer(Modifier.height(6.dp))
+        }
         val showAttempt = st.phase == Phase.RECONNECTING || (st.phase == Phase.CONNECTING && st.attempt > 1)
         if (showAttempt) {
             Text(stringResource(R.string.attempt_of, st.attempt, s.tries()), style = MaterialTheme.typography.bodySmall, color = x.busy)
@@ -326,9 +341,15 @@ fun HomeScreen(openSettings: () -> Unit, openLogs: () -> Unit) {
 
 @Composable
 private fun Stat(ico: Ico, label: String, value: String, modifier: Modifier = Modifier) {
+    val x = LocalExtra.current
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon8(ico, LocalExtra.current.a, 18.dp)
-        Spacer(Modifier.height(8.dp))
+        Box(
+            Modifier.size(36.dp).clip(RoundedCornerShape(12.dp))
+                .background(Brush.linearGradient(listOf(x.a.copy(alpha = 0.16f), x.b.copy(alpha = 0.24f))))
+                .border(1.dp, x.a.copy(alpha = 0.25f), RoundedCornerShape(12.dp)),
+            contentAlignment = Alignment.Center
+        ) { Icon8(ico, x.a, 18.dp) }
+        Spacer(Modifier.height(10.dp))
         Text(
             value, fontSize = 14.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, maxLines = 1, textAlign = TextAlign.Center,
             overflow = TextOverflow.Ellipsis

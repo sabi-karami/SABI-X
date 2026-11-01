@@ -19,6 +19,8 @@ object Engine {
     val speedBps = MutableStateFlow<Long?>(null)
     /** True while the VPN interface is switched off but the core keeps running (Stop button). */
     val paused = MutableStateFlow(false)
+    /** Wall-clock time of the first successful connect of this session (0 = not connected). */
+    val connectedAt = MutableStateFlow(0L)
     val logs = MutableStateFlow<List<String>>(emptyList())
     /** Why the link last dropped (shown under the connect button); null = nothing dropped yet. */
     val lastReason = MutableStateFlow<String?>(null)

@@ -24,6 +24,13 @@
 It combines **Aether** (MASQUE / WARP), **Psiphon** and **Tor** behind one tap, with **sing-box** as the TUN engine.
 Neon-dark UI built with Jetpack Compose. English and Persian, full RTL.
 
+### 📸 Preview
+
+<div align="center">
+<img src="assets/mockup.svg" width="720" alt="SABI-X screens"/>
+<br/><sub>Idle · Connected</sub>
+</div>
+
 ### ⬇️ Download
 
 <div align="center">
