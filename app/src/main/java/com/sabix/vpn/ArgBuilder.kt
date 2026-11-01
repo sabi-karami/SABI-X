@@ -1,0 +1,121 @@
+package com.sabix.vpn
+
+import android.content.Context
+import java.io.File
+
+/** Turns the user's settings into Aether command line flags. */
+object ArgBuilder {
+    fun exitPort(s: Settings): Int = when (s.route) {
+        Route.AETHER_PSIPHON -> PSIPHON_PORT
+        Route.AETHER_TOR -> TOR_PORT
+        else -> s.socksPort
+    }
+
+    private fun csv(v: String) = v.split(',', '\n', ' ', ';').map { it.trim() }.filter { it.isNotEmpty() }.joinToString(",")
+
+    fun build(ctx: Context, s: Settings, fresh: Boolean, psiSlot: Int = 0): List<String> {
+        val dir = File(ctx.filesDir, "aether")
+        val nl = ctx.applicationInfo.nativeLibraryDir
+        val a = ArrayList<String>()
+        val r = s.route
+
+        a += listOf("--config", File(dir, "aether.toml").path)
+        a += listOf("--bind", "${s.socksBind()}:${s.socksPort}")
+        if (s.httpEnabled) a += listOf("--http-proxy", "${s.httpBind()}:${s.httpPort}")
+
+        when (r) {
+            Route.AETHER_PSIPHON -> a += "--psiphon"
+            Route.PSIPHON_ONLY -> a += "--psiphon-only"
+            Route.PSIPHON_REVERSE -> a += "--psiphon-reverse"
+            Route.AETHER_TOR -> a += "--tor"
+            Route.TOR_ONLY -> a += "--tor-only"
+            Route.TOR_REVERSE -> a += "--tor-reverse"
+            Route.AETHER -> {}
+        }
+
+        if (!r.noWarp) {
+            // Reverse routes carry MASQUE over HTTP/2 only (Tor and Psiphon are TCP only).
+            val proto = if (r.reverse) Protocol.MASQUE else s.protocol
+            when (proto) {
+                Protocol.MASQUE -> a += listOf("--protocol", "masque")
+                Protocol.WIREGUARD -> a += listOf("--protocol", "wg")
+                Protocol.GOOL -> a += listOf("--protocol", "gool")
+                Protocol.GOOL_CLASSIC -> a += "--gool-classic"
+                Protocol.MIM -> a += listOf("--protocol", "mim")
+            }
+            if (r.reverse) a += "--h2"
+            else if (proto == Protocol.MASQUE || proto == Protocol.MIM) a += if (s.carrier == "h2") "--h2" else "--h3"
+
+            // Custom gateway: naming a peer makes the core skip scanning. Invalid text is ignored.
+            val ep = Endpoints.clean(s.endpoint)
+            val ep2 = Endpoints.clean(s.endpoint2)
+            val h2 = r.reverse || s.carrier == "h2"
+            when (proto) {
+                Protocol.MASQUE -> if (ep != null) {
+                    a += listOf("--peer", ep)
+                    if (h2) a += listOf("--h2-peer", ep)
+                }
+                Protocol.WIREGUARD -> if (ep != null) a += listOf("--peer", ep)
+                Protocol.GOOL -> {
+                    if (ep != null) a += listOf("--peer", ep)
+                    if (ep2 != null) a += listOf("--gool-peer", ep2)
+                }
+                Protocol.GOOL_CLASSIC -> {
+                    if (ep != null) a += listOf("--wiw-outer", ep)
+                    if (ep2 != null) a += listOf("--wiw-inner", ep2)
+                }
+                Protocol.MIM -> {
+                    if (ep != null) a += listOf("--mim-outer", ep)
+                    if (ep2 != null) a += listOf("--mim-inner", ep2)
+                }
+            }
+
+            a += listOf("--scan", s.scan)
+            if (s.noize != "default") a += listOf("--noize", s.noize)
+            a += when (s.ipVersion) { "6" -> "-6"; "dual" -> "--dual"; else -> "-4" }
+            a += if (fresh || !s.quickReconnect) "--no-quick-reconnect" else "--quick-reconnect"
+            if (s.dns.isNotBlank()) a += listOf("--dns", csv(s.dns))
+        }
+
+        if (s.routeBlock.isNotBlank()) a += listOf("--route-block", csv(s.routeBlock))
+        if (s.routeDirect.isNotBlank()) a += listOf("--route-direct", csv(s.routeDirect))
+        if (s.upstream.isNotBlank()) a += listOf("--upstream", s.upstream.trim())
+
+        if (r.usesPsiphon) {
+            a += listOf("--psiphon-bin", "$nl/libpsiphon.so")
+            a += listOf("--psiphon-dir", File(dir, if (psiSlot == 0) "psiphon" else "psiphon-$psiSlot").path)
+            if (r != Route.PSIPHON_ONLY) a += listOf("--psiphon-bind", "${s.socksBind()}:$PSIPHON_PORT")
+            a += listOf("--psiphon-mode", s.psiphonMode)
+            if (s.psiphonRegion.isNotBlank()) a += listOf("--psiphon-region", s.psiphonRegion.uppercase())
+        }
+        if (r.usesTor) {
+            a += listOf("--tor-dir", File(dir, "tor").path)
+            if (r != Route.TOR_ONLY) a += listOf("--tor-bind", "${s.socksBind()}:$TOR_PORT")
+            when (s.torBridges) {
+                "always" -> a += "--tor-bridges"
+                "never" -> a += "--no-tor-bridges"
+            }
+        }
+        if (s.perf != "auto") a += listOf("--perf", s.perf)
+        a += splitArgs(s.extraArgs)
+        return a
+    }
+
+    /** Splits a command line the way a shell would for simple cases: spaces separate, quotes group. */
+    fun splitArgs(v: String): List<String> {
+        val out = ArrayList<String>()
+        val sb = StringBuilder()
+        var quote: Char? = null
+        var has = false
+        for (ch in v) {
+            when {
+                quote != null -> if (ch == quote) quote = null else sb.append(ch)
+                ch == '"' || ch == '\'' -> { quote = ch; has = true }
+                ch.isWhitespace() -> if (has || sb.isNotEmpty()) { out += sb.toString(); sb.clear(); has = false }
+                else -> sb.append(ch)
+            }
+        }
+        if (has || sb.isNotEmpty()) out += sb.toString()
+        return out
+    }
+}
